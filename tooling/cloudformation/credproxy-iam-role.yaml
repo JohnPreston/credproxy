@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CredProxy IAM Role Template - Creates IAM role for CredProxy to assume"
+
+Parameters:
+  RoleName:
+    Type: String
+    Default: "credproxy-role"
+    Description: "Name of the IAM role to create"
+    MinLength: 1
+    MaxLength: 64
+    AllowedPattern: "^[a-zA-Z0-9+=,.@_-]+$"
+    ConstraintDescription: "Role name must contain only alphanumeric characters and +=,.@-_"
+
+  PathPrefix:
+    Type: String
+    Default: "/credproxy/"
+    Description: "Path prefix for the IAM role"
+    MinLength: 1
+    MaxLength: 512
+
+  SourceAccount:
+    Type: String
+    Default: "self"
+    Description: 'AWS account ID that can assume this role (use "self" for current account)'
+    AllowedPattern: '^(self|\\d{12})$'
+    ConstraintDescription: 'Must be "self" or a 12-digit AWS account ID'
+
+  ExternalId:
+    Type: String
+    Default: "none"
+    Description: 'External ID for additional security (use "none" for no external ID requirement)'
+    MinLength: 0
+    MaxLength: 1224
+
+Conditions:
+  UseSelfAccount:
+    Fn::Equals:
+      - Ref: SourceAccount
+      - "self"
+  UseExternalAccount:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: SourceAccount
+          - "self"
+  RequireExternalId:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: ExternalId
+          - "none"
+
+Resources:
+  CredProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path:
+        Ref: PathPrefix
+      RoleName:
+        Ref: RoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                Fn::If:
+                  - UseSelfAccount
+                  - Ref: "AWS::AccountId"
+                  - Ref: SourceAccount
+            Action: "sts:AssumeRole"
+            Fn::If:
+              - RequireExternalId
+              - Condition:
+                  StringEquals:
+                    "sts:ExternalId":
+                      Ref: ExternalId
+              - Ref: "AWS::NoValue"
+      Policies:
+        - PolicyName: CredProxyMinimalPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sts:GetCallerIdentity"
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value:
+            Ref: RoleName
+        - Key: Purpose
+          Value: "CredProxy Demo Role"
+        - Key: CreatedBy
+          Value: "CredProxy CloudFormation Template"
+
+Outputs:
+  RoleArn:
+    Description: "ARN of the created IAM role"
+    Value:
+      Fn::GetAtt: [CredProxyRole, Arn]
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-RoleArn"
+
+  RoleName:
+    Description: "Name of the created IAM role"
+    Value:
+      Ref: CredProxyRole
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-RoleName"
+
+  RoleId:
+    Description: "ID of the created IAM role"
+    Value:
+      Fn::GetAtt: [CredProxyRole, RoleId]
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-RoleId"
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Role Configuration"
+        Parameters:
+          - RoleName
+          - PathPrefix
+          - SourceAccount
+          - ExternalId
+    ParameterLabels:
+      RoleName:
+        default: "IAM Role Name"
+      PathPrefix:
+        default: "IAM Role Path Prefix"
+      SourceAccount:
+        default: "Source AWS Account"
+      ExternalId:
+        default: "External ID (Optional)"

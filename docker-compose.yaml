@@ -1,0 +1,32 @@
+services:
+  # The long-running credential provider service
+  credproxy:
+    image: ${REGISTRY:-public.ecr.aws}/${REPOSITORY:-compose-x/aws/credproxy}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    restart: unless-stopped
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-west-1}
+    expose:
+      - "1338/tcp"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+    healthcheck:
+      test:
+        - CMD
+        - /bin/lprobe
+        - -mode=http
+        - -port=1338
+        - -endpoint=/health
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,331 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/johnpreston/credproxy/config-schema.json",
+  "title": "CredProxy Configuration",
+  "description": "Configuration schema for CredProxy service. Environment variables can be used to override configuration values using the CREDPROXY_ namespace.",
+  "type": "object",
+  "anyOf": [
+      {
+        "required": ["services"],
+        "properties": {
+          "services": {
+            "minProperties": 1
+          }
+        }
+      },
+      {
+        "required": ["dynamic_services"],
+        "properties": {
+          "dynamic_services": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    ],
+  "properties": {
+    "server": {
+      "type": "object",
+      "description": "Server configuration settings",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Server host address. Environment variable: CREDPROXY_HOST",
+          "default": "localhost",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Server port number. Environment variable: CREDPROXY_PORT",
+          "default": 1338,
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Enable debug mode. Environment variable: CREDPROXY_DEBUG",
+          "default": false
+        },
+        "log_health_checks": {
+          "type": "boolean",
+          "description": "Enable logging for health check requests (non-error responses). Environment variable: CREDPROXY_LOG_HEALTH_CHECKS",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "credentials": {
+      "type": "object",
+      "description": "Credential management settings",
+      "properties": {
+        "refresh_buffer_seconds": {
+          "type": "integer",
+          "description": "Refresh credentials this many seconds before expiry. Environment variable: CREDPROXY_REFRESH_BUFFER_SECONDS",
+          "default": 300,
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "retry_delay": {
+          "type": "integer",
+          "description": "Retry delay on errors in seconds. Environment variable: CREDPROXY_RETRY_DELAY",
+          "default": 60,
+          "minimum": 1,
+          "maximum": 300
+        },
+        "request_timeout": {
+          "type": "integer",
+          "description": "Request timeout for external requests in seconds. Environment variable: CREDPROXY_REQUEST_TIMEOUT",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 300
+        }
+      },
+      "additionalProperties": false
+    },
+    "aws_defaults": {
+      "$ref": "#/definitions/source_credentials_config",
+      "description": "Default AWS source credentials applied to all services unless overridden"
+    },
+    "services": {
+      "type": "object",
+      "description": "Service-specific configurations",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "$ref": "#/definitions/service_config"
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "dynamic_services": {
+      "type": "object",
+      "description": "Dynamic services configuration settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable dynamic services monitoring. Environment variable: CREDPROXY_DYNAMIC_SERVICES_ENABLED",
+          "default": false
+        },
+        "directories": {
+          "type": "array",
+          "description": "List of directories to monitor for service configuration files. Each directory can have its own include/exclude patterns. Environment variable: CREDPROXY_DYNAMIC_SERVICES_DIRECTORIES (comma-separated paths only)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to monitor",
+                "minLength": 1
+              },
+              "include_patterns": {
+                "type": "array",
+                "description": "List of regex patterns to include files. If empty, all non-excluded files are included.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "default": []
+              },
+              "exclude_patterns": {
+                "type": "array",
+                "description": "List of regex patterns to exclude files.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "default": []
+              }
+            },
+            "required": ["path"],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "default": [{"path": "/credproxy/dynamic", "include_patterns": [], "exclude_patterns": []}]
+        },
+        "reload_interval": {
+          "type": "integer",
+          "description": "Reload interval in seconds for debouncing file changes. Environment variable: CREDPROXY_DYNAMIC_SERVICES_RELOAD_INTERVAL",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60
+        }
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Metrics and telemetry configuration",
+      "properties": {
+        "prometheus": {
+          "type": "object",
+          "description": "Prometheus metrics configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable Prometheus metrics endpoint. Environment variable: CREDPROXY_METRICS_PROMETHEUS_ENABLED",
+              "default": true
+            },
+            "host": {
+              "type": "string",
+              "description": "Host address for Prometheus metrics server. Environment variable: CREDPROXY_METRICS_PROMETHEUS_HOST",
+              "default": "0.0.0.0",
+              "format": "hostname"
+            },
+            "port": {
+              "type": "integer",
+              "description": "Port for Prometheus metrics server (separate from main API). Environment variable: CREDPROXY_METRICS_PROMETHEUS_PORT",
+              "default": 9090,
+              "minimum": 1024,
+              "maximum": 65535
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "service_config": {
+      "type": "object",
+      "description": "Service configuration",
+      "required": ["auth_token", "source_credentials", "assumed_role"],
+      "properties": {
+        "auth_token": {
+          "type": "string",
+          "description": "Authorization token for this service",
+          "minLength": 1
+        },
+        "source_credentials": {
+          "$ref": "#/definitions/source_credentials_config"
+        },
+        "assumed_role": {
+          "$ref": "#/definitions/assumed_role_config"
+        }
+      },
+      "patternProperties": {
+        "^x-.*": {}
+      },
+      "additionalProperties": false
+    },
+
+    "iam_profile_config": {
+      "type": "object",
+      "description": "AWS IAM profile authentication configuration",
+      "required": ["profile_name"],
+      "properties": {
+        "profile_name": {
+          "type": "string",
+          "description": "AWS CLI profile name",
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "config_file": {
+          "type": "string",
+          "description": "Path to AWS config file",
+          "format": "uri-reference"
+        }
+      },
+      "patternProperties": {
+        "^x-.*": {}
+      },
+      "additionalProperties": false
+    },
+    "iam_keys_config": {
+      "type": "object",
+      "description": "AWS IAM access keys authentication configuration",
+      "required": ["aws_access_key_id", "aws_secret_access_key"],
+      "properties": {
+        "aws_access_key_id": {
+          "type": "string",
+          "description": "AWS access key ID",
+          "pattern": "^[A-Z0-9]{20}$",
+          "examples": ["AKIAIOSFODNN7EXAMPLE"]
+        },
+        "aws_secret_access_key": {
+          "type": "string",
+          "description": "AWS secret access key",
+          "minLength": 40,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9+/]+$"
+        },
+        "session_token": {
+          "type": "string",
+          "description": "AWS session token (for temporary credentials)",
+          "minLength": 1
+        }
+      },
+      "patternProperties": {
+        "^x-.*": {}
+      },
+      "additionalProperties": false
+    },
+    "source_credentials_config": {
+      "type": "object",
+      "description": "Source AWS credentials configuration",
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "AWS region",
+          "pattern": "^\\$\\{fromEnv:[A-Z_][A-Z0-9_]*\\}$|^[a-z]{2}-[a-z]+-\\d+$",
+          "examples": [
+            "us-east-1",
+            "eu-west-1",
+            "ap-southeast-1",
+            "${fromEnv:AWS_DEFAULT_REGION}"
+          ]
+        },
+        "iam_profile": {
+          "$ref": "#/definitions/iam_profile_config"
+        },
+        "iam_keys": {
+          "$ref": "#/definitions/iam_keys_config"
+        }
+      },
+      "patternProperties": {
+        "^x-.*": {}
+      },
+      "additionalProperties": false
+    },
+    "assumed_role_config": {
+      "type": "object",
+      "description": "AWS role assumption configuration",
+      "required": ["RoleArn"],
+      "properties": {
+        "RoleArn": {
+          "type": "string",
+          "description": "AWS IAM role ARN to assume",
+          "pattern": "^arn:aws:iam::[0-9]{12}:role/[a-zA-Z0-9+=,.@_/-]*[a-zA-Z0-9+=,.@_-]$",
+          "examples": ["arn:aws:iam::123456789012:role/MyRole"]
+        },
+        "RoleSessionName": {
+          "type": "string",
+          "description": "AWS session name",
+          "default": "credproxy",
+          "pattern": "^[a-zA-Z0-9+=,.@_-]{1,64}$"
+        },
+        "DurationSeconds": {
+          "type": "integer",
+          "description": "Duration of role session in seconds (900-43200)",
+          "minimum": 900,
+          "maximum": 43200,
+          "default": 900,
+          "examples": [900, 3600, 7200, 43200]
+        },
+        "ExternalId": {
+          "type": "string",
+          "description": "External ID for role assumption",
+          "pattern": "^[a-zA-Z0-9+=,.@_-]{1,64}$"
+        }
+      },
+      "patternProperties": {
+        "^x-.*": {}
+      },
+      "additionalProperties": true
+    }
+  }
+}

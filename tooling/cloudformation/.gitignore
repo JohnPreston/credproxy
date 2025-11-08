@@ -1,0 +1,5 @@
+docker-compose.yaml
+config.yaml
+credproxy-token.txt
+aws-service-*txt
+__pycache__

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [".opencode/AGENTS.md", ".opencode/PYTHON.md"],
+  "permission": {
+    "bash": {
+      "git push *": "deny",
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git commit *": "ask",
+      "ls": "allow",
+      "pwd": "allow",
+      "docker compose build": "allow",
+      "docker compose config": "allow",
+      "docker compose up": "deny",
+      "docker *": "ask",
+      "rm *": "deny"
+    }
+  }
+}
