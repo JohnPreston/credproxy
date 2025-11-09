@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:22-slim
 
 # Copy the test script first
 COPY ./scripts/test_aws_sdk.js /scripts/test_aws_sdk.js

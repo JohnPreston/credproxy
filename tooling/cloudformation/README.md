@@ -74,6 +74,18 @@ Each SDK container:
 `credproxy-python-boto3-session`, `credproxy-node-aws-sdk-session`,
 `credproxy-go-aws-sdk-session`
 
+## SDK-Specific Details
+
+### Node.js AWS SDK v3
+
+- **Node.js Version**: 22 (latest LTS)
+- **SDK Version**: AWS SDK v3 for JavaScript
+- **Credentials Provider**: Demonstrates simple async credentials provider
+  pattern
+- **Key Feature**: Shows how easy it is to integrate CredProxy with AWS SDK v3
+  using a simple async function that returns credentials with automatic refresh
+  support
+
 ## Cleanup
 
 ```bash
