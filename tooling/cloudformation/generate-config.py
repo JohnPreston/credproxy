@@ -155,12 +155,14 @@ def generate_credproxy_config(service_names, role_arn, external_id=None, region=
 def generate_proxy_sidecar_config(sdk_name):
     """Generate configuration for a proxy sidecar service."""
     return {
-        "image": "alpine:latest",
-        "command": "sh -c /_socat.sh",
+        "build": {
+            "context": ".",
+            "dockerfile": "./dockerfiles/socat.Dockerfile",
+        },
         "depends_on": {"credproxy": {"condition": "service_healthy"}},
-        "volumes": ["./scripts/socat.sh:/_socat.sh"],
         "restart": "unless-stopped",
-        "networks": ["credproxy-net"],
+        "network_mode": f"service:{sdk_name}",
+        "cap_add": ["NET_ADMIN"],
     }
 
 
@@ -172,8 +174,14 @@ def generate_sdk_service_config(
     container_name = sdk_type
     token_file = f"/run/secrets/{container_name}-token"
 
+    # Use relative URL when in sidecar mode (for ECS metadata testing)
+    if with_sidecars:
+        credentials_uri = "http://169.254.170.2/v1/credentials"
+    else:
+        credentials_uri = f"http://{CREDPROXY_HOST}:{CREDPROXY_PORT}/v1/credentials"
+
     environment = {
-        "AWS_CONTAINER_CREDENTIALS_FULL_URI": f"http://{CREDPROXY_HOST}:{CREDPROXY_PORT}/v1/credentials",
+        "AWS_CONTAINER_CREDENTIALS_FULL_URI": credentials_uri,
         "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE": token_file,
         "AWS_DEFAULT_REGION": f"${{AWS_DEFAULT_REGION:-{region}}}",
         "AWS_REGION": f"${{AWS_DEFAULT_REGION:-{region}}}",
@@ -215,10 +223,9 @@ def generate_sdk_service_config(
     # Set up dependencies based on SDK order and sidecar mode
     # aws-cli -> python-boto3 -> node-aws-sdk -> go-aws-sdk
     if with_sidecars:
-        # Use proxy sidecar instead of direct credproxy dependency
-        proxy_name = f"{sdk_type}-proxy"
-        dependencies = {proxy_name: {"condition": "service_started"}}
-        network_mode = f"service:{proxy_name}"
+        # Proxy sidecar depends on SDK service and uses its network namespace
+        dependencies = {"credproxy": {"condition": "service_healthy"}}
+        network_mode = None  # SDK service uses default network
     else:
         # Direct dependency on credproxy
         dependencies = {"credproxy": {"condition": "service_healthy"}}
@@ -238,10 +245,13 @@ def generate_sdk_service_config(
         {
             "environment": environment,
             "depends_on": dependencies,
-            "network_mode": network_mode,
             "secrets": [f"{container_name}-token"],
         }
     )
+
+    # Add network_mode only if specified (for non-sidecar mode)
+    if network_mode:
+        config["network_mode"] = network_mode
 
     return config
 
@@ -287,6 +297,10 @@ def generate_docker_compose_snippet(
                 "driver": "bridge",
             },
         }
+        # SDK services need to be on the network when using sidecars
+        for sdk in sdks:
+            if sdk in services:
+                services[sdk]["networks"] = ["credproxy-net"]
 
     return snippet
 
@@ -357,6 +371,17 @@ def generate_full_docker_compose(
                     "start_period": "10s",
                 },
                 "secrets": credproxy_secrets,
+            },
+            # Add socat proxy sidecar when in sidecar mode
+            "socat-proxy": {
+                "build": {
+                    "context": ".",
+                    "dockerfile": "./dockerfiles/socat.Dockerfile",
+                },
+                "restart": "unless-stopped",
+                "network_mode": "service:credproxy",
+                "cap_add": ["NET_ADMIN"],
+                "depends_on": {"credproxy": {"condition": "service_healthy"}},
             },
             # Merge the SDK services from snippet
             **service_snippet["services"],

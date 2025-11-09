@@ -30,3 +30,40 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # Socat proxy sidecar for ECS metadata forwarding
+  socat-proxy:
+    image: ${REGISTRY:-public.ecr.aws}/${REPOSITORY:-compose-x/aws/credprox}:${IMAGE_TAG:-latest}-socat
+    build:
+      context: tooling/cloudformation
+      dockerfile: dockerfiles/socat.Dockerfile
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      credproxy:
+        condition: service_healthy
+
+## Example below shows how you can tether an application to a small sidecar that will handle passing your calls to credproxy
+## in order to satisfy the SDK that the query is served locally
+## Make sure that the connection between the socat and credproxy is secure.
+# network_mode: service:aws-cli
+
+# aws-cli:
+#   image: public.ecr.aws/aws-cli/aws-cli:latest
+#   command:
+#     - sts
+#     - get-caller-identity
+#   environment:
+#     #AWS_CONTAINER_CREDENTIALS_FULL_URI: http://169.254.170.2/v1/credentials
+#     AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /v1/credentials
+#     AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE: /run/secrets/aws-cli-token
+#     AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-west-1}
+#     AWS_REGION: ${AWS_DEFAULT_REGION:-eu-west-1}
+#   depends_on:
+#     credproxy:
+#       condition: service_healthy
+#   secrets:
+#     - aws-cli-token
+#   networks:
+#     - credproxy-net

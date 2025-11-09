@@ -24,6 +24,48 @@ docker compose up --force-recreate --remove-orphans --build
 **Result**: Watch each SDK container get AWS credentials one by one through
 CredProxy with metrics collection enabled.
 
+## Socat Proxy Sidecar
+
+The generated Docker Compose configuration includes a socat proxy sidecar that
+enables ECS metadata-style credential forwarding:
+
+### Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   AWS SDK App   │    │  Socat Proxy    │    │   CredProxy     │
+│                 │    │                 │    │                 │
+│  AWS SDK        │───▶│  169.254.170.2  │───▶│  localhost:1338 │
+│  requests       │    │  forwarding     │    │  credential     │
+│  credentials    │    │  to CredProxy   │    │  provider       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Features
+
+- **ECS Metadata IP**: Adds `169.254.170.2` to loopback interface
+- **Port Forwarding**: Forwards both port 80 (ECS metadata) and port 1338
+  (CredProxy API)
+- **Network Namespace**: Shares network namespace with CredProxy for loopback
+  access
+- **AWS SDK Compatibility**: Enables standard ECS credential provider
+  environment variables
+
+### Usage
+
+Applications can now use ECS-style credential configuration:
+
+```bash
+AWS_CONTAINER_CREDENTIALS_FULL_URI=http://169.254.170.2/v1/credentials
+AWS_CONTAINER_AUTHORIZATION_TOKEN=your-auth-token
+```
+
+### Files
+
+- `dockerfiles/socat.Dockerfile` - Docker image for the socat proxy
+- `scripts/socat.sh` - Startup script for IP setup and port forwarding
+- `socat.README.md` - Detailed documentation for the socat proxy
+
 ## Metrics & Observability
 
 ### Prometheus Metrics
