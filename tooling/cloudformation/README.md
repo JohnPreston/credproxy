@@ -56,7 +56,7 @@ enables ECS metadata-style credential forwarding:
 Applications can now use ECS-style credential configuration:
 
 ```bash
-AWS_CONTAINER_CREDENTIALS_FULL_URI=http://169.254.170.2/v1/credentials
+AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1/v1/credentials
 AWS_CONTAINER_AUTHORIZATION_TOKEN=your-auth-token
 ```
 

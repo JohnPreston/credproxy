@@ -105,7 +105,7 @@ Architecture
 
 **CredProxy runs directly with built-in signal handling** in containerized environments.
 
-- **Docker**: Runs credproxy directly (recommended for production)
+- **Docker**: Runs credproxy directly (recommended for containerized environments)
 - **Direct credproxy**: ``credproxy --config config.yaml``
 - **Environment variable**: ``CREDPROXY_CONFIG_FILE=/path/to/config.yaml``
 
@@ -214,6 +214,7 @@ See :doc:`installation/healthcheck` for complete health check configuration.
 
     installation/index
     configuration/index
+    deployment/index
     development/index
     troubleshooting/index
     api/index

@@ -15,7 +15,7 @@ Configuration
 
 CredProxy uses YAML-based configuration with support for environment variable
 substitution and file content injection. This makes it flexible for various
-deployment scenarios from local development to production environments.
+deployment scenarios from local development to testing environments.
 
 Authentication Methods
 ----------------------

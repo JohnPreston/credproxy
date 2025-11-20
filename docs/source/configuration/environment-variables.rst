@@ -152,7 +152,7 @@ Credentials Configuration
     **From schema:** ``credentials.request_timeout``
 
 Dynamic Services Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``CREDPROXY_DYNAMIC_SERVICES_ENABLED``
     Enable dynamic services monitoring.

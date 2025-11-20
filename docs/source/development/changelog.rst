@@ -10,64 +10,32 @@ All notable changes to CredProxy will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_, and
 this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-[0.2.0] - 2025-01-08
+[Unreleased]
 
 Added
 
-    - **Per-directory pattern filtering** for dynamic services configuration
-    - **Multiple directory support** with individual include/exclude patterns
-    - **Backward compatibility** for existing dynamic services configurations
-    - **Enhanced regex pattern matching** with cross-platform path normalization
-    - **Comprehensive pattern examples** and documentation updates
+    - **Better sidecar network_mode** - Improved Docker networking configuration for sidecar containers
+    - **NodeJS test environment** - Added Node.js 22 testing support
 
-Changed
-
-    - **Dynamic services configuration** now supports array of directory objects
-    - **File filtering logic** improved with exclude-first, then include approach
-    - **Configuration validation** updated to support new directory object format
-    - **Documentation** enhanced with pattern matching examples and migration guide
-
-Features
-
-    - **DirectoryConfig** dataclass for per-directory configuration
-    - **Pattern matching functions** with proper error handling for invalid regex
-    - **Cross-platform path normalization** for consistent pattern matching
-    - **Enhanced logging** for pattern matching decisions
-    - **Test coverage** expanded to 277 tests covering all new functionality
-
-Configuration
-
-    - **New format**: ``directories`` array with ``path``, ``include_patterns``, ``exclude_patterns``
-    - **Old format**: Still supported via automatic conversion
-    - **Pattern flexibility**: Support for complex regex patterns and directory-based filtering
-    - **Multiple directories**: Each with independent filtering rules
-
-Migration
-
-    - **No breaking changes** - existing configurations continue to work
-    - **Optional upgrade** - new format provides enhanced filtering capabilities
-    - **Gradual adoption** - mix old and new formats during transition
-
-[0.1.0] - 2025-01-22
+[0.1.0] - 2025-11-08
 
 Added
 
-    - Initial release of CredProxy - ECS-compatible AWS credentials proxy
-    - ECS-compatible credential provider endpoint (``/v1/credentials``)
-    - Support for IAM profiles and IAM keys authentication methods
-    - JSON Schema validation for configuration files with comprehensive error reporting
-    - Variable substitution with ``${fromEnv:}`` and ``${fromFile:}`` syntax
-    - Automatic credential rotation with configurable refresh buffer (default: 5
-      minutes)
-    - Docker Compose integration examples for various authentication scenarios
-    - Comprehensive test suite with 140 tests and 66% code coverage
-    - Proper signal handling for graceful container shutdown
-    - Health check endpoint (``/health``) with lprobe integration
-    - CLI with validation, debug options, and development mode
-    - Non-root Docker container execution (UID/GID 1338) for security
-    - Dynamic services configuration with file watching capabilities
-    - Secure credential storage in memory only (no persistence)
-    - Token-based authentication with per-service authorization tokens
+    - **Initial release** of CredProxy - ECS-compatible AWS credentials proxy
+    - **ECS-compatible credential provider endpoint** (``/v1/credentials``)
+    - **IAM profiles and IAM keys** authentication methods support
+    - **JSON Schema validation** for configuration files with comprehensive error reporting
+    - **Variable substitution** with ``${fromEnv:}`` and ``${fromFile:}`` syntax
+    - **Automatic credential rotation** with configurable refresh buffer (default: 5 minutes)
+    - **Docker Compose integration** examples for various authentication scenarios
+    - **Comprehensive test suite** with 140 tests and 66% code coverage
+    - **Graceful container shutdown** with proper signal handling
+    - **Health check endpoint** (``/health``) with lprobe integration
+    - **CLI with validation**, debug options, and development mode
+    - **Non-root Docker container** execution (UID/GID 1338) for security
+    - **Dynamic services configuration** with file watching capabilities
+    - **Secure credential storage** in memory only (no persistence)
+    - **Token-based authentication** with per-service authorization tokens
 
 Features
 

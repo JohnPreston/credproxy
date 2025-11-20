@@ -75,7 +75,7 @@ services:
 4. **AWS SDK Compatibility**: Applications can now use standard ECS credential
    provider environment variables:
    ```bash
-   AWS_CONTAINER_CREDENTIALS_FULL_URI=http://169.254.170.2/v1/credentials
+   AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1/v1/credentials
    AWS_CONTAINER_AUTHORIZATION_TOKEN=your-auth-token
    ```
 

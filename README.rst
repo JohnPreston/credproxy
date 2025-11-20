@@ -28,6 +28,14 @@ to strengthen applications that will later use AWS services like S3.
 
 **Result**: You can expose AWS Credentials to your application as if running on ECS!
 
+**For ECS metadata-style testing**: Use the CloudFormation template for multi-SDK testing with socat proxy:
+
+.. code-block:: bash
+
+    cd tooling/cloudformation
+    python3 generate-config.py
+    docker compose up --build
+
 ✨ Why CredProxy?
 ----------------
 
@@ -106,7 +114,7 @@ deployment is recommended.
 
 **CredProxy runs directly with built-in signal handling** in containerized environments.
 
-- **Docker**: Runs credproxy directly (recommended for production)
+- **Docker**: Runs credproxy directly (recommended for containerized environments)
 - **Direct credproxy**: ``credproxy --config config.yaml``
 - **Environment variable**: ``CREDPROXY_CONFIG_FILE=/path/to/config.yaml``
 
@@ -193,6 +201,66 @@ All Docker Compose examples include proper healthcheck configuration:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+🔗 Socat Proxy Sidecar for ECS Metadata
+----------------------------------------
+
+CredProxy includes a socat proxy sidecar that enables ECS metadata-style credential forwarding for applications that require the standard ECS credential provider interface:
+
+**Architecture**:
+
+.. code-block:: text
+
+    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+    │   AWS SDK App   │    │  Socat Proxy    │    │   CredProxy     │
+    │                 │    │                 │    │                 │
+    │  AWS SDK        │───▶│  169.254.170.2  │───▶│  localhost:1338 │
+    │  requests       │    │  forwarding     │    │  credential     │
+    │  credentials    │    │  to CredProxy   │    │  provider       │
+    └─────────────────┘    └─────────────────┘    └─────────────────┘
+
+**Features**:
+
+- **ECS Metadata IP**: Adds ``169.254.170.2`` to loopback interface
+- **Port Forwarding**: Forwards both port 80 (ECS metadata) and port 1338 (CredProxy API)
+- **Network Namespace**: Shares network namespace with CredProxy for loopback access
+- **AWS SDK Compatibility**: Enables standard ECS credential provider environment variables
+
+**Usage**:
+
+Applications can now use ECS-style credential configuration:
+
+.. code-block:: bash
+
+    AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1/v1/credentials
+    AWS_CONTAINER_AUTHORIZATION_TOKEN=your-auth-token
+
+**Docker Compose Integration**:
+
+The socat proxy is automatically included in the CloudFormation template and Docker Compose configuration:
+
+.. code-block:: yaml
+
+    services:
+      credproxy:
+        # Main CredProxy service
+        image: ${REGISTRY:-public.ecr.aws}/${REPOSITORY:-compose-x/aws/credproxy}:${IMAGE_TAG:-latest}
+        # ... other configuration ...
+
+      socat-proxy:
+        image: ${REGISTRY:-public.ecr.aws}/${REPOSITORY:-compose-x/aws/socat-proxy}:${IMAGE_TAG:-latest}
+        build:
+          context: tooling/cloudformation
+          dockerfile: dockerfiles/socat.Dockerfile
+        restart: unless-stopped
+        network_mode: service:credproxy
+        cap_add:
+          - NET_ADMIN
+        depends_on:
+          credproxy:
+            condition: service_healthy
+
+**👉 See `tooling/cloudformation/ <tooling/cloudformation/>`_ for complete setup instructions and examples**
 
 📡 API Reference
 ---------------
@@ -326,8 +394,8 @@ CredProxy includes built-in Prometheus metrics for observability:
     services:
       credproxy:
         ports:
-          - "1338:1338" # API port (localhost only)
-          - "9090:9090" # Metrics port (0.0.0.0)
+          - "9090:9090" # Metrics port (0.0.0.0) only
+        # WARNING: Never expose port 1338 - credentials endpoint transmits sensitive data in clear text
 
 🔄 Dynamic Services
 ~~~~~~~~~~~~~~~~~~

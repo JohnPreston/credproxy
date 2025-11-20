@@ -215,7 +215,7 @@ for hot-reloading services without restarting CredProxy.
     exclude_patterns: ["^\\..*"]
 
     # Include files in specific subdirectories
-    include_patterns: [".*/production/.*\\.yaml$", ".*/staging/.*\\.yaml$"]
+    include_patterns: [".*/testing/.*\\.yaml$", ".*/staging/.*\\.yaml$"]
     exclude_patterns: []
 
 **Backward Compatibility:**

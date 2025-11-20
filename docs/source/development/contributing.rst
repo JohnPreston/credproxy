@@ -74,7 +74,7 @@ Alternative Method (Development)
     - **``credproxy`` command** - Primary entry point (defined in pyproject.toml)
     - **``python -m credproxy``** - Alternative entry point for development
     - Both provide identical functionality and accept the same arguments
-    - Use ``credproxy`` command for production deployments
+    - Use ``credproxy`` command for testing deployments
     - Use either method for development and testing
 
 **Note**: Development mode requires existing AWS infrastructure (IAM roles/profiles).

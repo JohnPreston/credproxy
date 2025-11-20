@@ -221,7 +221,7 @@ Best Practices
 ==============
 
 1. **Always use** ``make docker-build`` for consistent builds with metadata
-2. **Pin Python version** in production builds for reproducibility
-3. **Use multi-platform builds** for production: ``docker buildx build --platform linux/amd64,linux/arm64``
+2. **Pin Python version** in testing builds for reproducibility
+3. **Use multi-platform builds** for testing: ``docker buildx build --platform linux/amd64,linux/arm64``
 4. **Keep config.yaml separate** - mount as volume, don't bake into image
 5. **Use secrets management** - leverage ``init_secrets.sh`` for Docker secrets

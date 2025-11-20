@@ -176,7 +176,7 @@ def generate_sdk_service_config(
 
     # Use relative URL when in sidecar mode (for ECS metadata testing)
     if with_sidecars:
-        credentials_uri = "http://169.254.170.2/v1/credentials"
+        credentials_uri = "http://127.0.0.1/v1/credentials"
     else:
         credentials_uri = f"http://{CREDPROXY_HOST}:{CREDPROXY_PORT}/v1/credentials"
 

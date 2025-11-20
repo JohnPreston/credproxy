@@ -78,7 +78,7 @@ Installation Steps
     # Run in development mode
     poetry run credproxy --dev --config config.yaml
 
-    # Or run in production mode
+    # Or run in testing mode
     poetry run credproxy --config config.yaml
 
 Development Setup

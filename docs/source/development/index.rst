@@ -10,7 +10,6 @@ Development
 
     contributing
     changelog
-    cloudformation
 
 Development Setup
 -----------------
